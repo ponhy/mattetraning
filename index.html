@@ -17,11 +17,24 @@ h1{font-size:clamp(30px,7vw,48px);margin:12px 0 4px}.sub{margin:0 0 20px;color:#
 .level.active{background:#2f7651;color:white;transform:translateY(-1px)}
 .card{background:white;border-radius:28px;padding:28px 22px;box-shadow:0 8px 28px #17312614}
 .levelname{font-weight:700;color:#577063;margin-bottom:18px}
-.sum{display:inline-grid;grid-template-columns:42px auto;align-items:end;font:600 clamp(48px,13vw,76px)/1.02 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:right;letter-spacing:3px}
-.op{grid-column:1}.a{grid-column:2}.op2{grid-column:1}.b{grid-column:2}
-.line{grid-column:1/3;border-top:5px solid #173126;margin-top:8px;padding-top:12px}
-input{width:min(310px,70vw);font:600 clamp(42px,12vw,68px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:right;border:3px solid #c9d3ca;border-radius:14px;padding:8px 12px;color:#173126;background:#fbfcf9}
-input:focus{outline:4px solid #acd8bc;border-color:#2f7651}
+ .paper{--cell:clamp(48px,12vw,70px);display:inline-grid;grid-template-columns:36px repeat(var(--columns),var(--cell));text-align:center;background:repeating-linear-gradient(0deg,transparent,transparent 39px,#dbe5e9 40px),#fbfcfa;border:1px solid #dbe5e9;border-radius:8px;padding:8px 6px 12px}
+.cell{height:var(--cell);display:flex;align-items:center;justify-content:center;border-left:1px solid #dbe5e9;font:600 clamp(32px,9vw,52px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;position:relative}
+.place{font-size:12px;color:#617067;height:26px;border-left:1px solid #dbe5e9}
+.note,.answer{width:100%;border:1px solid #c9d3ca;border-radius:7px;color:#173126;background:#ffffffb3;cursor:pointer;touch-action:manipulation}
+.note{height:46px;font:600 25px ui-monospace,SFMono-Regular,Menlo,monospace;color:#2f7651}
+.note-row{padding:3px;height:52px;border-left:1px solid #dbe5e9}
+.blank{height:52px}
+.answer-row{border-top:3px solid #173126;padding:5px 3px 0;height:calc(var(--cell) + 10px)}
+.answer{height:var(--cell);font:600 clamp(32px,9vw,52px) ui-monospace,SFMono-Regular,Menlo,monospace}
+.selected{outline:3px solid #2f7651;outline-offset:-3px;background:#e8f5df}
+.note:empty:after{content:'·';color:#8b9d91}
+.changed{text-decoration:line-through;text-decoration-color:#b04a3b;text-decoration-thickness:2px}
+button:focus-visible{outline:3px solid #2f7651;outline-offset:2px}
+.hint{font-size:15px;color:#577063;line-height:1.45;margin:16px 0 8px;min-height:44px}
+.keypad{max-width:310px;margin:12px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.key{border:0;border-radius:12px;min-height:48px;font-size:25px;font-weight:650;background:#e7ece6;color:#173126;touch-action:manipulation}
+.key.utility{font-size:16px}
+@media(prefers-reduced-motion:reduce){.piece{animation:none;display:none}}
 .actions{display:flex;gap:10px;justify-content:center;margin-top:20px}
 button.action{border:0;border-radius:16px;padding:15px 22px;font-size:19px;font-weight:750;background:#2f7651;color:white}
 button.secondary{background:#e7ece6;color:#294136}
@@ -40,12 +53,11 @@ button.secondary{background:#e7ece6;color:#294136}
 <div class="levels" id="levels"></div>
 <section class="card">
 <div class="levelname" id="levelname"></div>
-<div class="sum">
-<div class="a" id="a"></div><div class="op2" id="op"></div><div class="b" id="b"></div>
-<div class="line"><input id="answer" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Svar"></div>
-</div>
+<div class="paper" id="paper" role="group" aria-label="Uppställning"></div>
+<p class="hint" id="hint"></p>
+<div class="keypad" id="keypad" role="group" aria-label="Siffertangentbord"></div>
 <div class="actions"><button class="action" id="check">Svara</button><button class="action secondary" id="new">Ny uppgift</button></div>
-<div class="feedback" id="feedback"></div>
+<div class="feedback" id="feedback" role="status" aria-live="polite"></div>
 </section>
 <div class="stats" id="stats"></div>
 </main>
@@ -58,7 +70,11 @@ const levels=[
  {name:"Subtraktion med växling",short:"4",op:"−",make:subBorrow},
  {name:"Multiplikation",short:"5",op:"×",make:multiply}
 ];
-let level=+(localStorage.level||0), problem, locked=false;
+function saved(key){try{return localStorage.getItem(key)}catch{return null}}
+function save(key,value){try{localStorage.setItem(key,value)}catch{}}
+let level=Math.min(4,Math.max(0,Math.floor(Number(saved('level'))||0))), problem, locked=false;
+let answer=[], notes=[], columns=3, active={kind:'answer',col:2}, nextTimer;
+let rightCount=Number(saved('rightToday'))||0;
 const $=id=>document.getElementById(id), rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 function digits(n){return [Math.floor(n/100)%10,Math.floor(n/10)%10,n%10]}
 function addNoCarry(){
@@ -71,18 +87,86 @@ function subBorrow(){let a,b;do{a=rnd(101,999);b=rnd(10,a)}while(!digits(a).some
 function multiply(){return[rnd(2,12),rnd(2,12)]}
 function renderLevels(){
  $("levels").innerHTML=levels.map((x,i)=>`<button class="level ${i===level?"active":""}" data-i="${i}" aria-label="Nivå ${i+1}: ${x.name}">${x.short}</button>`).join("");
- document.querySelectorAll(".level").forEach(b=>b.onclick=()=>{level=+b.dataset.i;localStorage.level=level;renderLevels();next()})
+ document.querySelectorAll(".level").forEach(b=>b.onclick=()=>{level=+b.dataset.i;save('level',level);renderLevels();next()})
 }
-function next(){locked=false;problem=levels[level].make();$("a").textContent=problem[0];$("b").textContent=problem[1];$("op").textContent=levels[level].op;$("levelname").textContent="Nivå "+(level+1)+" · "+levels[level].name;$("answer").value="";$("feedback").textContent="";$("feedback").className="feedback";setTimeout(()=>$("answer").focus(),50)}
+const placeNames=['ental','tiotal','hundratal','tusental'];
+function next(){
+ clearTimeout(nextTimer);locked=false;problem=levels[level].make();
+ columns=Math.max(3,String(problem[0]).length,String(problem[1]).length);
+ answer=Array(columns).fill('');notes=Array(columns).fill('');active={kind:'answer',col:columns-1};
+ $("levelname").textContent="Nivå "+(level+1)+" · "+levels[level].name;
+ $("feedback").textContent="";$("feedback").className="feedback";renderPaper();
+}
 function expected(){if(level<2)return problem[0]+problem[1];if(level<4)return problem[0]-problem[1];return problem[0]*problem[1]}
-function check(){
- if(locked||$("answer").value==="")return;
- if(+$("answer").value===expected()){locked=true;$("feedback").textContent="Rätt! 🎉";$("feedback").className="feedback right";let n=+(localStorage.rightToday||0)+1;localStorage.rightToday=n;updateStats();celebrate();setTimeout(next,1100)}
- else{$("feedback").textContent="Försök igen 💪";$("feedback").className="feedback wrong";$("answer").select()}
+function renderPaper(){
+ const subtract=level===2||level===3;
+ const top=String(problem[0]).padStart(columns,' '), bottom=String(problem[1]).padStart(columns,' ');
+ const place=i=>placeNames[columns-1-i];
+ let html='<div></div>';
+ for(let i=0;i<columns;i++)html+=`<div class="place">${place(i)}</div>`;
+ html+='<div class="blank"></div>';
+ for(let i=0;i<columns;i++)html+=`<div class="note-row"><button class="note ${active.kind==='note'&&active.col===i?'selected':''}" data-kind="note" data-col="${i}" aria-label="${subtract?'Nytt värde vid lån':'Minnessiffra'}, ${place(i)}${notes[i]!==''?', '+notes[i]:''}" aria-pressed="${active.kind==='note'&&active.col===i}">${notes[i]}</button></div>`;
+ html+='<div class="cell"></div>';
+ for(let i=0;i<columns;i++)html+=`<div class="cell ${subtract&&notes[i]!==''?'changed':''}">${top[i].trim()}</div>`;
+ html+=`<div class="cell">${levels[level].op}</div>`;
+ for(let i=0;i<columns;i++)html+=`<div class="cell">${bottom[i].trim()}</div>`;
+ html+='<div class="answer-row"></div>';
+ for(let i=0;i<columns;i++)html+=`<div class="answer-row"><button class="answer ${active.kind==='answer'&&active.col===i?'selected':''}" data-kind="answer" data-col="${i}" aria-label="Svar, ${place(i)}${answer[i]!==''?', '+answer[i]:''}" aria-pressed="${active.kind==='answer'&&active.col===i}">${answer[i]}</button></div>`;
+ $('paper').style.setProperty('--columns',columns);$('paper').innerHTML=html;
+ $('paper').querySelectorAll('button').forEach(b=>{b.disabled=locked;b.onclick=()=>{active={kind:b.dataset.kind,col:Number(b.dataset.col)};renderPaper()}});
+ $('hint').textContent=active.kind==='note'?(subtract?'Skriv det nya värdet, t.ex. 12. Tryck sedan på nästa ruta eller på Klar.':'Skriv minnessiffran. Tryck sedan på nästa ruta eller på Klar.'):
+ (subtract?'Börja med entalen till höger. Tryck i en liten ruta ovanför talet för att anteckna lån.':'Börja med entalen till höger. De små rutorna ovanför talet är till för minnessiffror.');
+ $('keypad').querySelector('[data-key="done"]').textContent=active.kind==='note'?'Klar':'Rensa';
 }
-function updateStats(){let n=+(localStorage.rightToday||0);$("stats").textContent=n+" rätt på den här enheten"}
+function enterDigit(d){
+ if(locked)return;
+ if(active.kind==='answer'){
+ answer[active.col]=String(d);
+ if(active.col>0)active.col--;
+ }else{
+ const old=notes[active.col];
+ const candidate=old+String(d);
+ // Lån kan ge 10 till 19; minnessiffror är en enda siffra.
+ notes[active.col]=(level===2||level===3)&&old==='1'&&Number(candidate)<=19?candidate:String(d);
+ }
+ renderPaper();
+}
+function erase(){
+ if(locked)return;
+ const values=active.kind==='note'?notes:answer;
+ if(active.kind==='answer'&&values[active.col]===''&&active.col<columns-1)active.col++;
+ values[active.col]=values[active.col].slice(0,-1);renderPaper();
+}
+function done(){
+ if(locked)return;
+ if(active.kind==='note')active={kind:'answer',col:Math.max(0,answer.findLastIndex(x=>x===''))};
+ else answer[active.col]='';
+ renderPaper();
+}
+function check(){
+ if(locked)return;
+ const written=answer.join('').trim();
+ const first=answer.findIndex(x=>x!=='');
+ if(first<0||answer.slice(first).some(x=>x==='')){
+ $('feedback').textContent='Fyll i svarsrutorna från höger.';$('feedback').className='feedback';return;
+ }
+ if(Number(written)===expected()){
+ locked=true;$("feedback").textContent="Rätt! 🎉";$("feedback").className="feedback right";
+ rightCount++;save('rightToday',rightCount);updateStats();celebrate();renderPaper();nextTimer=setTimeout(next,1400);
+ }else{$("feedback").textContent="Försök igen 💪";$("feedback").className="feedback wrong";}
+}
+function updateStats(){$('stats').textContent=rightCount+' rätt på den här enheten'}
 function celebrate(){const c=$("confetti"),chars=["⭐","🎉","✨","●"];for(let i=0;i<22;i++){let s=document.createElement("span");s.className="piece";s.textContent=chars[rnd(0,chars.length-1)];s.style.left=rnd(3,97)+"%";s.style.animationDelay=rnd(0,250)+"ms";c.appendChild(s);setTimeout(()=>s.remove(),1600)}}
-$("check").onclick=check;$("new").onclick=next;$("answer").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+$('keypad').innerHTML=[1,2,3,4,5,6,7,8,9,'erase',0,'done'].map(k=>`<button class="key ${typeof k==='string'?'utility':''}" data-key="${k}" aria-label="${k==='erase'?'Sudda':k==='done'?'Klar eller rensa':k}">${k==='erase'?'Sudda':k==='done'?'Rensa':k}</button>`).join('');
+$('keypad').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==='erase')erase();else if(k==='done')done();else enterDigit(k)});
+$("check").onclick=check;$("new").onclick=next;
+document.addEventListener('keydown',e=>{
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(/^\d$/.test(e.key)){e.preventDefault();enterDigit(e.key)}
+ else if(e.key==='Backspace'||e.key==='Delete'){e.preventDefault();erase()}
+ else if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();if(active.kind==='note')done();else check()}
+ else if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&!locked){e.preventDefault();active.col=Math.max(0,Math.min(columns-1,active.col+(e.key==='ArrowLeft'?-1:1)));renderPaper()}
+});
 renderLevels();updateStats();next();
 </script>
 </body>
