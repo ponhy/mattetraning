@@ -39,11 +39,12 @@ button.action{border:0;border-radius:16px;padding:15px 22px;font-size:19px;font-
 button.secondary{background:#e1effb;color:#24527b}
 .feedback{height:42px;font-size:23px;font-weight:800;margin-top:14px}.right{color:#16834b}.wrong{color:#ba3c4c}
 .stats{margin-top:18px;color:#55728e;font-weight:650}
-.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-.piece{position:absolute;top:-20px;font-size:24px;animation:fall 1.15s ease-in forwards}
+.confetti{position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden}
+.piece{position:absolute;top:-24px;font-size:clamp(22px,6vw,34px);will-change:transform,opacity;animation:fall 1.6s cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes blink{50%{opacity:0}}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
-@media(prefers-reduced-motion:reduce){.piece{animation:none;display:none}.note.selected:empty:after,.answer.selected:empty:after{animation:none}}
+@keyframes gentleCelebration{0%{opacity:0;transform:translateY(0) scale(.7)}35%{opacity:1;transform:translateY(8vh) scale(1)}100%{opacity:0;transform:translateY(18vh) scale(.9)}}
+@media(prefers-reduced-motion:reduce){.piece{animation:gentleCelebration 1.2s ease-out forwards}.note.selected:empty:after,.answer.selected:empty:after{animation:none}}
 @media(max-width:500px){main{padding-top:12px}.levels{gap:5px}.level{font-size:15px;padding:11px 2px}.card{padding:24px 12px}.paper{padding-left:6px;padding-right:6px}}
 </style>
 </head>
@@ -157,7 +158,16 @@ function check(){
  }else{$("feedback").textContent="Försök igen 💪";$("feedback").className="feedback wrong";}
 }
 function updateStats(){$('stats').textContent=rightCount+' rätt på den här enheten'}
-function celebrate(){const c=$("confetti"),chars=["⭐","🎉","✨","●"];for(let i=0;i<22;i++){let s=document.createElement("span");s.className="piece";s.textContent=chars[rnd(0,chars.length-1)];s.style.left=rnd(3,97)+"%";s.style.animationDelay=rnd(0,250)+"ms";c.appendChild(s);setTimeout(()=>s.remove(),1600)}}
+function celebrate(){
+ const c=$("confetti"),chars=["⭐","🎉","✨","●","◆"],colors=["#ffd43b","#ff6b6b","#4dabf7","#69db7c","#b197fc"];
+ c.replaceChildren();
+ for(let i=0;i<42;i++){
+  const s=document.createElement("span");
+  s.className="piece";s.textContent=chars[rnd(0,chars.length-1)];s.setAttribute("aria-hidden","true");
+  s.style.left=rnd(1,99)+"%";s.style.color=colors[rnd(0,colors.length-1)];s.style.animationDelay=rnd(0,320)+"ms";
+  c.appendChild(s);setTimeout(()=>s.remove(),2100);
+ }
+}
 $('keypad').innerHTML=[1,2,3,4,5,6,7,8,9,'erase',0,'done'].map(k=>`<button class="key ${typeof k==='string'?'utility':''}" data-key="${k}" aria-label="${k==='erase'?'Sudda':k==='done'?'Klar eller rensa':k}">${k==='erase'?'Sudda':k==='done'?'Rensa':k}</button>`).join('');
 $('keypad').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.key;if(k==='erase')erase();else if(k==='done')done();else enterDigit(k)});
 $("check").onclick=check;$("new").onclick=next;
