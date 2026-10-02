@@ -3,47 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f6f7ef">
+<meta name="theme-color" content="#edf6ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Matteträning">
 <title>Matteträning</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#173126;background:#f6f7ef}
-*{box-sizing:border-box} body{margin:0;min-height:100vh}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#14395f;background:#edf6ff}
+*{box-sizing:border-box} body{margin:0;min-height:100vh;background:linear-gradient(180deg,#e8f4ff 0,#f7fbff 70%)}
 main{max-width:720px;margin:auto;padding:24px 18px 48px;text-align:center}
-h1{font-size:clamp(30px,7vw,48px);margin:12px 0 4px}.sub{margin:0 0 20px;color:#617067}
+h1{font-size:clamp(30px,7vw,48px);margin:12px 0 4px;color:#0d4f8c}.sub{margin:0 0 20px;color:#55728e}
 .levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
-.level{border:0;border-radius:14px;padding:12px 4px;background:#e5e9df;font-size:17px;font-weight:700;color:#33463c}
-.level.active{background:#2f7651;color:white;transform:translateY(-1px)}
-.card{background:white;border-radius:28px;padding:28px 22px;box-shadow:0 8px 28px #17312614}
-.levelname{font-weight:700;color:#577063;margin-bottom:18px}
- .paper{--cell:clamp(48px,12vw,70px);display:inline-grid;grid-template-columns:36px repeat(var(--columns),var(--cell));text-align:center;background:repeating-linear-gradient(0deg,transparent,transparent 39px,#dbe5e9 40px),#fbfcfa;border:1px solid #dbe5e9;border-radius:8px;padding:8px 6px 12px}
-.cell{height:var(--cell);display:flex;align-items:center;justify-content:center;border-left:1px solid #dbe5e9;font:600 clamp(32px,9vw,52px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;position:relative}
-.place{font-size:12px;color:#617067;height:26px;border-left:1px solid #dbe5e9}
-.note,.answer{width:100%;border:1px solid #c9d3ca;border-radius:7px;color:#173126;background:#ffffffb3;cursor:pointer;touch-action:manipulation}
-.note{height:46px;font:600 25px ui-monospace,SFMono-Regular,Menlo,monospace;color:#2f7651}
-.note-row{padding:3px;height:52px;border-left:1px solid #dbe5e9}
-.blank{height:52px}
-.answer-row{border-top:3px solid #173126;padding:5px 3px 0;height:calc(var(--cell) + 10px)}
+.level{border:0;border-radius:14px;padding:12px 4px;background:#dcecff;font-size:17px;font-weight:700;color:#24527b}
+.level.active{background:#1769b0;color:white;transform:translateY(-1px);box-shadow:0 5px 14px #1769b033}
+.card{background:#fff;border-radius:28px;padding:28px 22px;box-shadow:0 10px 32px #1769b01c}
+.levelname{font-weight:700;color:#416989;margin-bottom:18px}
+.paper{--cell:clamp(48px,12vw,70px);display:inline-grid;grid-template-columns:36px repeat(var(--columns),var(--cell));text-align:center;background:#fcfeff;border-radius:18px;padding:10px 10px 16px;box-shadow:inset 0 0 0 1px #d9e9f7}
+.cell{height:var(--cell);display:flex;align-items:center;justify-content:center;font:600 clamp(32px,9vw,52px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;position:relative}
+.place{font-size:12px;color:#7892aa;height:26px}
+.note,.answer{width:100%;border:0;color:#14395f;background:transparent;cursor:pointer;touch-action:manipulation}
+.note{height:42px;font:600 25px ui-monospace,SFMono-Regular,Menlo,monospace;color:#1769b0}
+.note-row{padding:1px 3px;height:46px}
+.blank{height:46px}
+.answer-row{border-top:3px solid #14395f;padding:7px 3px 0;height:calc(var(--cell) + 12px)}
 .answer{height:var(--cell);font:600 clamp(32px,9vw,52px) ui-monospace,SFMono-Regular,Menlo,monospace}
-.selected{outline:3px solid #2f7651;outline-offset:-3px;background:#e8f5df}
-.note:empty:after{content:'·';color:#8b9d91}
-.changed{text-decoration:line-through;text-decoration-color:#b04a3b;text-decoration-thickness:2px}
-button:focus-visible{outline:3px solid #2f7651;outline-offset:2px}
-.hint{font-size:15px;color:#577063;line-height:1.45;margin:16px 0 8px;min-height:44px}
+.selected{color:#0d5da4;background:#e8f3ff;border-radius:9px;box-shadow:inset 0 -3px 0 #1e72c9}
+.note.selected:empty:after,.answer.selected:empty:after{content:'|';color:#1e72c9;font-weight:400;animation:blink 1s steps(1) infinite}
+.changed{text-decoration:line-through;text-decoration-color:#c33f50;text-decoration-thickness:2px}
+button:focus-visible{outline:3px solid #1e72c9;outline-offset:2px}
+.hint{font-size:15px;color:#55728e;line-height:1.45;margin:16px 0 8px;min-height:44px}
 .keypad{max-width:310px;margin:12px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.key{border:0;border-radius:12px;min-height:48px;font-size:25px;font-weight:650;background:#e7ece6;color:#173126;touch-action:manipulation}
+.key{border:0;border-radius:12px;min-height:48px;font-size:25px;font-weight:650;background:#e1effb;color:#14395f;touch-action:manipulation}
 .key.utility{font-size:16px}
-@media(prefers-reduced-motion:reduce){.piece{animation:none;display:none}}
 .actions{display:flex;gap:10px;justify-content:center;margin-top:20px}
-button.action{border:0;border-radius:16px;padding:15px 22px;font-size:19px;font-weight:750;background:#2f7651;color:white}
-button.secondary{background:#e7ece6;color:#294136}
-.feedback{height:42px;font-size:23px;font-weight:800;margin-top:14px}.right{color:#20834d}.wrong{color:#b04a3b}
-.stats{margin-top:18px;color:#617067;font-weight:650}
+button.action{border:0;border-radius:16px;padding:15px 22px;font-size:19px;font-weight:750;background:#1769b0;color:white}
+button.secondary{background:#e1effb;color:#24527b}
+.feedback{height:42px;font-size:23px;font-weight:800;margin-top:14px}.right{color:#16834b}.wrong{color:#ba3c4c}
+.stats{margin-top:18px;color:#55728e;font-weight:650}
 .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .piece{position:absolute;top:-20px;font-size:24px;animation:fall 1.15s ease-in forwards}
+@keyframes blink{50%{opacity:0}}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
-@media(max-width:500px){main{padding-top:12px}.levels{gap:5px}.level{font-size:15px;padding:11px 2px}.card{padding:24px 12px}}
+@media(prefers-reduced-motion:reduce){.piece{animation:none;display:none}.note.selected:empty:after,.answer.selected:empty:after{animation:none}}
+@media(max-width:500px){main{padding-top:12px}.levels{gap:5px}.level{font-size:15px;padding:11px 2px}.card{padding:24px 12px}.paper{padding-left:6px;padding-right:6px}}
 </style>
 </head>
 <body>
@@ -114,8 +115,8 @@ function renderPaper(){
  for(let i=0;i<columns;i++)html+=`<div class="answer-row"><button class="answer ${active.kind==='answer'&&active.col===i?'selected':''}" data-kind="answer" data-col="${i}" aria-label="Svar, ${place(i)}${answer[i]!==''?', '+answer[i]:''}" aria-pressed="${active.kind==='answer'&&active.col===i}">${answer[i]}</button></div>`;
  $('paper').style.setProperty('--columns',columns);$('paper').innerHTML=html;
  $('paper').querySelectorAll('button').forEach(b=>{b.disabled=locked;b.onclick=()=>{active={kind:b.dataset.kind,col:Number(b.dataset.col)};renderPaper()}});
- $('hint').textContent=active.kind==='note'?(subtract?'Skriv det nya värdet, t.ex. 12. Tryck sedan på nästa ruta eller på Klar.':'Skriv minnessiffran. Tryck sedan på nästa ruta eller på Klar.'):
- (subtract?'Börja med entalen till höger. Tryck i en liten ruta ovanför talet för att anteckna lån.':'Börja med entalen till höger. De små rutorna ovanför talet är till för minnessiffror.');
+ $('hint').textContent=active.kind==='note'?(subtract?'Skriv det nya värdet, t.ex. 12. Tryck sedan ovanför nästa siffra eller på Klar.':'Skriv minnessiffran. Tryck sedan ovanför nästa siffra eller på Klar.'):
+ (subtract?'Börja med entalen till höger. Tryck ovanför en siffra för att anteckna lån.':'Börja med entalen till höger. Skriv minnessiffror ovanför talet.');
  $('keypad').querySelector('[data-key="done"]').textContent=active.kind==='note'?'Klar':'Rensa';
 }
 function enterDigit(d){
@@ -148,7 +149,7 @@ function check(){
  const written=answer.join('').trim();
  const first=answer.findIndex(x=>x!=='');
  if(first<0||answer.slice(first).some(x=>x==='')){
- $('feedback').textContent='Fyll i svarsrutorna från höger.';$('feedback').className='feedback';return;
+ $('feedback').textContent='Fyll i svaret från höger.';$('feedback').className='feedback';return;
  }
  if(Number(written)===expected()){
  locked=true;$("feedback").textContent="Rätt! 🎉";$("feedback").className="feedback right";
