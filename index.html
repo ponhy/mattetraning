@@ -17,6 +17,12 @@ h1{font-size:clamp(30px,7vw,48px);margin:12px 0 4px;color:#0d4f8c}.sub{margin:0 
 .level.active{background:#1769b0;color:white;transform:translateY(-1px);box-shadow:0 5px 14px #1769b033}
 .card{background:#fff;border-radius:28px;padding:28px 22px;box-shadow:0 10px 32px #1769b01c}
 .levelname{font-weight:700;color:#416989;margin-bottom:18px}
+.table-picker{max-width:430px;margin:0 auto 20px;padding:12px;background:#edf6ff;border-radius:16px}
+.table-picker p{margin:0 0 9px;color:#416989;font-size:15px;font-weight:700}
+.table-buttons{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.table-button{border:0;border-radius:10px;min-height:40px;padding:5px 2px;background:#dcecff;color:#24527b;font-size:16px;font-weight:750;touch-action:manipulation}
+.table-button.all{grid-column:span 7}
+.table-button.active{background:#1769b0;color:#fff;box-shadow:0 3px 9px #1769b033}
 .paper{--cell:clamp(48px,12vw,70px);display:inline-grid;grid-template-columns:36px repeat(var(--columns),var(--cell));text-align:center;background:#fcfeff;border-radius:18px;padding:10px 10px 16px;box-shadow:inset 0 0 0 1px #d9e9f7}
 .cell{height:var(--cell);display:flex;align-items:center;justify-content:center;font:600 clamp(32px,9vw,52px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;position:relative}
 .place{font-size:12px;color:#7892aa;height:26px}
@@ -55,6 +61,10 @@ button.secondary{background:#e1effb;color:#24527b}
 <div class="levels" id="levels"></div>
 <section class="card">
 <div class="levelname" id="levelname"></div>
+<div class="table-picker" id="tablePicker" hidden>
+<p>Välj tabell</p>
+<div class="table-buttons" id="tableButtons" role="group" aria-label="Välj multiplikationstabell"></div>
+</div>
 <div class="paper" id="paper" role="group" aria-label="Uppställning"></div>
 <p class="hint" id="hint"></p>
 <div class="keypad" id="keypad" role="group" aria-label="Siffertangentbord"></div>
@@ -75,6 +85,8 @@ const levels=[
 function saved(key){try{return localStorage.getItem(key)}catch{return null}}
 function save(key,value){try{localStorage.setItem(key,value)}catch{}}
 let level=Math.min(4,Math.max(0,Math.floor(Number(saved('level'))||0))), problem, locked=false;
+const storedTable=saved('timesTable');
+let selectedTable=storedTable!==null&&/^(?:[0-9]|1[0-2])$/.test(storedTable)?Number(storedTable):'all';
 let answer=[], notes=[], columns=3, active={kind:'answer',col:2}, nextTimer;
 let rightCount=Number(saved('rightToday'))||0;
 const $=id=>document.getElementById(id), rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
@@ -86,17 +98,35 @@ function addNoCarry(){
 function addCarry(){let a,b;do{a=rnd(101,899);b=rnd(101,999-a)}while(!digits(a).some((d,i)=>d+digits(b)[i]>=10));return[a,b]}
 function subNoBorrow(){let a=rnd(100,999),ad=digits(a),bd=ad.map((d,i)=>rnd(i===0?0:0,d));let b=bd[0]*100+bd[1]*10+bd[2];return[a,b]}
 function subBorrow(){let a,b;do{a=rnd(101,999);b=rnd(10,a)}while(!digits(a).some((d,i)=>digits(b)[i]>d));return[a,b]}
-function multiply(){return[rnd(2,12),rnd(2,12)]}
+function multiply(){const table=selectedTable==='all'?rnd(0,12):selectedTable;return[table,rnd(0,12)]}
 function renderLevels(){
  $("levels").innerHTML=levels.map((x,i)=>`<button class="level ${i===level?"active":""}" data-i="${i}" aria-label="Nivå ${i+1}: ${x.name}">${x.short}</button>`).join("");
  document.querySelectorAll(".level").forEach(b=>b.onclick=()=>{level=+b.dataset.i;save('level',level);renderLevels();next()})
+}
+function renderTablePicker(){
+ const picker=$('tablePicker');
+ if(level!==4){picker.hidden=true;return}
+ picker.hidden=false;
+ const choices=['all',...Array.from({length:13},(_,i)=>i)];
+ $('tableButtons').innerHTML=choices.map(value=>{
+  const active=value===selectedTable;
+  const label=value==='all'?'Blandat':String(value);
+  const aria=value==='all'?'Blandade tabeller':value+':ans tabell';
+  return `<button class="table-button ${value==='all'?'all ':''}${active?'active':''}" data-table="${value}" aria-label="${aria}" aria-pressed="${active}">${label}</button>`;
+ }).join('');
+ $('tableButtons').querySelectorAll('button').forEach(button=>button.onclick=()=>{
+  selectedTable=button.dataset.table==='all'?'all':Number(button.dataset.table);
+  save('timesTable',selectedTable);renderTablePicker();next();
+ });
 }
 const placeNames=['ental','tiotal','hundratal','tusental'];
 function next(){
  clearTimeout(nextTimer);locked=false;problem=levels[level].make();
  columns=Math.max(3,String(problem[0]).length,String(problem[1]).length);
  answer=Array(columns).fill('');notes=Array(columns).fill('');active={kind:'answer',col:columns-1};
- $("levelname").textContent="Nivå "+(level+1)+" · "+levels[level].name;
+ const tableName=level===4?(selectedTable==='all'?' · Blandat':' · '+selectedTable+':ans tabell'):'';
+ $("levelname").textContent="Nivå "+(level+1)+" · "+levels[level].name+tableName;
+ renderTablePicker();
  $("feedback").textContent="";$("feedback").className="feedback";renderPaper();
 }
 function expected(){if(level<2)return problem[0]+problem[1];if(level<4)return problem[0]-problem[1];return problem[0]*problem[1]}
